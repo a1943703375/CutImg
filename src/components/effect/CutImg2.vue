@@ -43,7 +43,7 @@ const themeStore = useThemeStore();
         <div class="cut-box" v-show="isSelected" :style="{width : cutBoxW + 'px', height : (cutBoxW) / whRatio + 'px'}">
             <!-- 上传的图片 -->
             <div :style="{maxWidth : cutBoxW + 'px', maxHeight : cutBoxW / whRatio + 'px'}">
-                <img class="upload-img" ref="tarImg">
+                <img class="upload-img">
                 <div class="cut-mask"></div>
                 <div ref="cutFrame" class="cut" @mousedown="allowMove($event)">
                     <span ref="rb" class="cut-scale-rb" @mousedown="allowScale($event)"></span>
