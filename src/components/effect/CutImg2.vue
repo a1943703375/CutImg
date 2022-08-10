@@ -44,11 +44,8 @@ const themeStore = useThemeStore();
             <!-- 上传的图片 -->
             <div :style="{maxWidth : cutBoxW + 'px', maxHeight : cutBoxW / whRatio + 'px'}">
                 <img class="upload-img" ref="tarImg">
-                <div class="cut-mask" ref="cutFrame"></div>
-                <div ref="cutFrame" class="cut" @mousedown="allowMove($event)" :style="{width : data.cut.w + 'px',
-                                                                                        height : data.cut.h + 'px',
-                                                                                        left : data.cut.left + 'px',
-                                                                                        top : data.cut.top + 'px'}">
+                <div class="cut-mask"></div>
+                <div ref="cutFrame" class="cut" @mousedown="allowMove($event)">
                     <span ref="rb" class="cut-scale-rb" @mousedown="allowScale($event)"></span>
                     <span ref="lb" class="cut-scale-lb" @mousedown="allowScale($event)"></span>
                     <span ref="rt" class="cut-scale-rt" @mousedown="allowScale($event)"></span>
