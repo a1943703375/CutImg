@@ -12,16 +12,14 @@ const props = defineProps<{
 const tarImg = ref<HTMLImageElement>();
 const preImg = ref<HTMLImageElement>();
 const cutFrame = ref<HTMLDivElement>();
-const lt = ref<HTMLDivElement>();
-const rt = ref<HTMLDivElement>();
-const lb = ref<HTMLDivElement>();
-const rb = ref<HTMLDivElement>();
+
 
 
 const {isSelected, data} = useCutImg()
-                    .setVnode(tarImg, preImg)
+                    .setVnode(tarImg, preImg, cutFrame)
                     .setProps(props.cutBoxW, props.whRatio, props.preW)
                     .getSelectStatus();
+const themeStore = useThemeStore();
 
 
 
@@ -46,7 +44,7 @@ const {isSelected, data} = useCutImg()
             <!-- 上传的图片 -->
             <div :style="{maxWidth : cutBoxW + 'px', maxHeight : cutBoxW / whRatio + 'px'}">
                 <img class="upload-img" ref="tarImg">
-                <div class="cut-mask" ></div>
+                <div class="cut-mask" ref="cutFrame"></div>
                 <div ref="cutFrame" class="cut" @mousedown="allowMove($event)" :style="{width : data.cut.w + 'px',
                                                                                         height : data.cut.h + 'px',
                                                                                         left : data.cut.left + 'px',
@@ -64,10 +62,7 @@ const {isSelected, data} = useCutImg()
             <!-- 头像 -->
             <div class="p-avatar">
                 <div class="a-img-mask a-img-mask-light" :style="isAvatar ? {borderRadius : '50%', width : preW + 'px', height : preW + 'px'} : {borderRadius : '8px', width : preW + 'px', height : preW / whRatio + 'px'}">
-                    <img ref="preImg" src="@/assets/222.jpg" alt=" " :style="{width : data.preImg.w + 'px',
-                                                                            height : data.preImg.h + 'px',
-                                                                            left : data.preImg.left + 'px',
-                                                                            top : data.preImg.top + 'px'}"/>
+                    <img ref="preImg" src="@/assets/222.jpg" alt=" "/>
                 </div>
                 <span v-if="!isAvatar" style="color : rgb(50,50,50)">预览图片</span>
                 <span v-if="isAvatar" style="color : rgb(50,50,50)">{{ isSelected == false ? '当前头像' : '预览头像' }}</span>
