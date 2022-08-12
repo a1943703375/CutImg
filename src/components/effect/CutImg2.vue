@@ -13,10 +13,13 @@ const props = defineProps<{
                 customUploadBtn : boolean
             }>()
 
+
 const file : HTMLInputElement = document.createElement('input') as HTMLInputElement;
 file.setAttribute('type','file');
 file.setAttribute('accept','image/png,image/jpg,image/jpeg');
-    
+
+const h = props.whRatio > 1 ? 40 : 20
+
 const reset = () => {
     
     file.click();
@@ -29,19 +32,19 @@ const reset = () => {
     }
 }
 
-
 const useCutImg : CutImg = new CutImg();
-const isSelected = useCutImg.setId(props.tarImg, props.preImg, props.cutFrame)
+const { isSelected, pixel, prompt } = useCutImg.setId(props.tarImg, props.preImg, props.cutFrame)
                             .setProp({
                                 originW: props.cutBoxW,
                                 preW: props.preW,
                                 whRatio: props.whRatio,
                                 files: {
-                                minSize: 400,
-                                maxSize: 5000,
-                                minW: 960,
-                                minH: 600
-                            }
+                                    minSize: 400,
+                                    maxSize: 5000,
+                                    minW: 960,
+                                    minH: 600,
+                                },
+                                
                             }).getSelectStatus();
 
 
@@ -62,13 +65,14 @@ const isSelected = useCutImg.setId(props.tarImg, props.preImg, props.cutFrame)
             <div class="no-select-mask" :style="isLight ? {background : 'rgb(200,200,200)'} : {background : 'rgb(49, 53, 60)'}"></div>
             <span :style="isLight ? {color : 'rgb(50,50,50)'} : {color : 'rgb(150,150,150)'}">选择本地图片</span>
         </div>
+        <!-- 自定义上传按钮 -->
         <div class="slot" v-if="!isSelected && customUploadBtn" @click="reset()" style="margin-left : 20px">
             <slot></slot>
         </div>
- <!-- 已选择图片 -->
+        <!-- 已选择图片 -->
         <div v-show="isSelected">
                        
-            <div class="cut-box"  :style="{width : cutBoxW + 'px', height : (cutBoxW) / whRatio + 'px'}">
+            <div class="cut-box"  :style="{width : cutBoxW + 'px', height : (cutBoxW) / whRatio  + h + 'px'}">
                 <!-- 上传的图片 -->
                 <div :style="{maxWidth : cutBoxW + 'px', maxHeight : cutBoxW / whRatio + 'px'}">
                     <img class="upload-img" :id="tarImg">
@@ -82,11 +86,17 @@ const isSelected = useCutImg.setId(props.tarImg, props.preImg, props.cutFrame)
                 </div>
 
             </div>
-            <div class="selected-upload" @click="reset()">
-                <svg class="icon" viewBox="0 0 1024 1024" width="15" height="15" :style="isLight ? {fill : '#8a8a8a'} : {fill : 'rgb(190,190,190)'}">
-                    <path d="M1017.576727 326.493091l-87.226182 151.272727c0.256 3.677091 0.558545 7.284364 0.558546 10.961455h-6.842182a46.545455 46.545455 0 0 1-28.392727 21.736727h-0.395637a46.289455 46.289455 0 0 1-8.424727 1.419636h-2.327273a29.137455 29.137455 0 0 1-11.264-1.210181c-1.466182-0.325818-2.955636-0.512-4.398545-1.000728a46.685091 46.685091 0 0 1-8.634182-3.886545l-161.908363-93.626182a46.801455 46.801455 0 0 1 46.731636-81.082182l70.842182 40.96A325.352727 325.352727 0 0 0 217.949091 349.090909H209.454545a46.545455 46.545455 0 1 1-78.08-34.048 417.861818 417.861818 0 0 1 771.048728 23.994182l34.210909-59.345455a46.754909 46.754909 0 1 1 80.942545 46.801455z m-124.951272 382.464a417.838545 417.838545 0 0 1-771.048728-23.994182l-34.210909 59.345455A46.778182 46.778182 0 1 1 6.4 697.483636l87.249455-151.272727C93.393455 542.557091 93.090909 538.949818 93.090909 535.272727h6.842182a46.545455 46.545455 0 0 1 28.369454-21.736727h0.395637A47.104 47.104 0 0 1 137.146182 512h2.327273a29.137455 29.137455 0 0 1 11.264 1.210182c1.466182 0.325818 2.955636 0.512 4.398545 1.000727a46.685091 46.685091 0 0 1 8.634182 3.886546l161.908363 93.626181a46.801455 46.801455 0 0 1-46.731636 81.082182l-70.842182-40.96A325.352727 325.352727 0 0 0 806.050909 674.909091H814.545455a46.545455 46.545455 0 1 1 78.08 34.048z"></path>
-                </svg>
-                <span :style="isLight ? {color : 'rgb(50,50,50)'} : {color : 'rgb(190,190,190)'}">选择文件</span>
+            <div :style="{display : 'flex', marginTop : '5px',width : cutBoxW + 'px', justifyContent:'space-between'}">
+                <!-- 重新选择文件 -->
+                <div class="selected-upload" @click="reset()">
+                    <svg class="icon" viewBox="0 0 1024 1024" width="15" height="15" :style="isLight ? {fill : '#8a8a8a'} : {fill : 'rgb(190,190,190)'}">
+                        <path d="M1017.576727 326.493091l-87.226182 151.272727c0.256 3.677091 0.558545 7.284364 0.558546 10.961455h-6.842182a46.545455 46.545455 0 0 1-28.392727 21.736727h-0.395637a46.289455 46.289455 0 0 1-8.424727 1.419636h-2.327273a29.137455 29.137455 0 0 1-11.264-1.210181c-1.466182-0.325818-2.955636-0.512-4.398545-1.000728a46.685091 46.685091 0 0 1-8.634182-3.886545l-161.908363-93.626182a46.801455 46.801455 0 0 1 46.731636-81.082182l70.842182 40.96A325.352727 325.352727 0 0 0 217.949091 349.090909H209.454545a46.545455 46.545455 0 1 1-78.08-34.048 417.861818 417.861818 0 0 1 771.048728 23.994182l34.210909-59.345455a46.754909 46.754909 0 1 1 80.942545 46.801455z m-124.951272 382.464a417.838545 417.838545 0 0 1-771.048728-23.994182l-34.210909 59.345455A46.778182 46.778182 0 1 1 6.4 697.483636l87.249455-151.272727C93.393455 542.557091 93.090909 538.949818 93.090909 535.272727h6.842182a46.545455 46.545455 0 0 1 28.369454-21.736727h0.395637A47.104 47.104 0 0 1 137.146182 512h2.327273a29.137455 29.137455 0 0 1 11.264 1.210182c1.466182 0.325818 2.955636 0.512 4.398545 1.000727a46.685091 46.685091 0 0 1 8.634182 3.886546l161.908363 93.626181a46.801455 46.801455 0 0 1-46.731636 81.082182l-70.842182-40.96A325.352727 325.352727 0 0 0 806.050909 674.909091H814.545455a46.545455 46.545455 0 1 1 78.08 34.048z"></path>
+                    </svg>
+                    <span :style="isLight ? {color : 'rgb(50,50,50)'} : {color : 'rgb(190,190,190)'}">选择文件</span>
+            
+                </div>
+                <!-- 显示图片预期大小 -->
+                <span v-if="!isAvatar" class="px" :style="isLight ? {color : 'rgb(50,50,50)'} : {color : 'rgb(190,190,190)'}">当前的分辨率为：<span :style="pixel.w > 960 ? { color : '#10B981' } : { color : '#B91C1C' }">{{ pixel.w }}*{{ pixel.h }}</span>，分辨率不能低于960*600</span>
             </div>
         </div>
         <!-- 预览 -->
@@ -103,8 +113,8 @@ const isSelected = useCutImg.setId(props.tarImg, props.preImg, props.cutFrame)
                 </div>
             </div>
         </div>
-    </div>
 
+    </div>
 </template>
 
 
@@ -116,7 +126,6 @@ const isSelected = useCutImg.setId(props.tarImg, props.preImg, props.cutFrame)
         height: 100%;
         display: flex;
         flex-shrink: 0;
-        overflow: hidden;
         justify-content: center;
         align-items: center;
     }
@@ -307,22 +316,25 @@ const isSelected = useCutImg.setId(props.tarImg, props.preImg, props.cutFrame)
     .selected-upload {
         position: relative;
         width: max-content;
-        display:  flex;
-        justify-content: center;
+        height: max-content;
+        display: inline-block;
         align-items: center;
         margin-top: 5px;
         cursor: pointer;
     }
     .icon {
+        position: relative;
         margin-right: 3px;
+        transform: translateY(15%);
     }
     .selected-upload > span {
+        position: relative;
         font-size: 0.8rem;
     }
     .selected-upload:hover > .icon > path {
         fill: rgb(38, 127, 205);
     }
-    .selected-upload:hover > span {
+    .selected-upload:hover > span:nth-child(2) {
         color: rgb(38, 127, 205) !important;
     }
     .selected-img {
@@ -346,5 +358,19 @@ const isSelected = useCutImg.setId(props.tarImg, props.preImg, props.cutFrame)
         cursor: pointer;
         left: 50%;
         transform: translateX(-50%);
+    }
+
+
+    .px {
+        position: relative;
+        width: max-content;
+        height: min-content;
+        right: 0;
+        transform: translateY(25%);
+        font-size: 0.875rem;
+    }
+
+    .tips {
+        position: fixed;
     }
 </style>
