@@ -1,4 +1,4 @@
-import {onMounted, onUnmounted, ref} from 'vue';
+import {onMounted, onUnmounted, reactive, ref} from 'vue';
 type data = {
     cut : {
         w : number,
@@ -24,6 +24,15 @@ type props = {
         minH : number
     }
 }
+type pixel = {
+    w : number,
+    h : number
+}
+type prompting = {
+    status : boolean,
+    msg : string,
+    code : number
+}
 class CutImg {
     private image : HTMLImageElement = new Image(); // 存放上传的图片
     private reader : FileReader = new FileReader();  //  读取图片
@@ -32,6 +41,15 @@ class CutImg {
     private pImg : HTMLImageElement = new Image();     //预览图片
     private cFrame : HTMLDivElement = document.createElement('div') as HTMLDivElement;    //裁剪框
     private isSelected = ref<boolean>(false);
+    private pixel = reactive<pixel>({
+        w : 0,
+        h : 0
+    })
+    private prompting = reactive<prompting>({
+        status : false,
+        msg : '',
+        code : 0
+    });
     private data : data = {
             cut : {
                 w : 0,
@@ -61,11 +79,10 @@ class CutImg {
                 left : 0,
                 top : 0
             },
-            originAreaW : 0,    //存放图片容器的宽
+            originAreaW : 0,    //存放图片的容器的宽
             preW : 0,           //预览图片的宽
             imgWhRatio : 0,     //图片的宽高比
             whRatio : 0,        //裁剪框的宽高比
-            cutPreviewRatio : 0,      //裁剪框与预览框的大小比
             fileRules : {
                 minSize : 0,
                 maxSize : 0,
@@ -99,6 +116,11 @@ class CutImg {
             this.isSelected.value = false;
             return undefined;
         };
+        if (e.size < 500000 || e.size > 5000000) {
+            this.isSelected.value = false;
+            return undefined;
+        }
+        
         this.reader.readAsDataURL(e);
         this.reader.onloadend = () => {
             this.image.src = String(this.reader.result);
@@ -114,7 +136,17 @@ class CutImg {
         }
 
     }
-    
+    private prompt = (msg : string, code : number) => {
+        this.prompting.status = true;
+        this.prompting.msg = msg;
+        this.prompting.code = code;
+        const timer = setTimeout(() => {
+            this.prompting.status = false;
+            this.prompting.msg = '';
+            this.prompting.code = 0;
+            clearTimeout(timer)
+        },2000);
+    }
     //初始化裁剪框和预览框
     private init = () => {
         if (this.tImg && this.pImg && this.isSelected.value) {
@@ -124,17 +156,21 @@ class CutImg {
                 this.tImg.style.height = 'auto';
                 this.staData.actualImg.w = this.staData.originAreaW;
                 this.staData.actualImg.h = this.staData.actualImg.w / this.staData.imgWhRatio;
+                this.data.cut.h = this.staData.actualImg.h;
+                this.data.cut.w = this.data.cut.h * this.staData.whRatio;
+                this.data.cut.left = (this.staData.actualImg.w - this.data.cut.w) / 2;
+                this.data.cut.top = 0;
             } else {
                 this.tImg.style.width = 'auto';
                 this.tImg.style.height = this.staData.originAreaW / this.staData.whRatio + 'px';
                 this.staData.actualImg.h = this.staData.originAreaW / this.staData.whRatio;
                 this.staData.actualImg.w = this.staData.actualImg.h * this.staData.imgWhRatio;
-                
+                this.data.cut.w = this.staData.actualImg.w;
+                this.data.cut.h = this.data.cut.w / this.staData.whRatio;
+                this.data.cut.top = (this.staData.actualImg.h - this.data.cut.h) / 2;
+                this.data.cut.left = 0;
             }
 
-            this.data.cut.w = 50;
-            this.data.cut.h = this.data.cut.w / this.staData.whRatio;
-            this.staData.cutPreviewRatio = this.data.cut.w / this.staData.preW;
             this.data.preImg.w = this.staData.actualImg.w / this.data.cut.w * this.staData.preW;
             this.data.preImg.h = this.data.preImg.w / this.staData.imgWhRatio;
 
@@ -153,6 +189,7 @@ class CutImg {
                 this.mouseData.rules.minY = t.top;
                 this.mouseData.rules.maxY = t.top + this.staData.actualImg.h; 
         }
+        
     }
     //更新预览图片
     private changeElement = () => {
@@ -161,6 +198,8 @@ class CutImg {
         this.data.preImg.left = -this.data.cut.left / this.staData.actualImg.w * this.data.preImg.w;
         this.data.preImg.top = -this.data.cut.top / this.staData.actualImg.h * this.data.preImg.h;
 
+        this.pixel.w = Math.floor(this.data.cut.w / this.staData.actualImg.w * this.staData.originImg.w);
+        this.pixel.h = Math.floor(this.data.cut.h / this.staData.actualImg.h * this.staData.originImg.h);
         
         if (this.cFrame && this.pImg) {
             this.cFrame.style.width = this.data.cut.w + 'px';
@@ -171,9 +210,12 @@ class CutImg {
             this.pImg.style.height = this.data.preImg.h + 'px';
             this.pImg.style.left =  this.data.preImg.left + 'px';
             this.pImg.style.top =  this.data.preImg.top + 'px';
+
         }
+
     }
 
+    
     //是否允许移动
     allowMove = (e : MouseEvent) => {
         e.preventDefault();
@@ -218,6 +260,8 @@ class CutImg {
             this.scaleLT(e.clientX, e.clientY);
         }
         this.verifyMouseArea(e);
+
+
         this.changeElement();
     }
 
@@ -379,6 +423,8 @@ class CutImg {
                 }
             }
         }
+
+        
     }
 
     //停止移动
@@ -403,8 +449,10 @@ class CutImg {
             const offsetX = e.clientX - this.mouseData.x;
             this.data.cut.top += offsetY;
             this.data.cut.left += offsetX;    
+
             this.mouseData.x = e.clientX;
             this.mouseData.y = e.clientY;
+
             this.mouseData.x = this.mouseData.x <= this.mouseData.rules.minX + this.data.cut.w / 2 ? this.mouseData.rules.minX + this.data.cut.w / 2 : this.mouseData.x;
             this.mouseData.x = this.mouseData.x >= this.mouseData.rules.maxX - this.data.cut.w / 2 ? this.mouseData.rules.maxX - this.data.cut.w / 2 : this.mouseData.x;
             this.mouseData.y = this.mouseData.y <= this.mouseData.rules.minY + this.data.cut.h / 2 ? this.mouseData.rules.minY + this.data.cut.h / 2 : this.mouseData.y;
@@ -420,7 +468,9 @@ class CutImg {
         this.data.cut.top = this.data.cut.top >= this.staData.actualImg.h - this.data.cut.h ? this.staData.actualImg.h - this.data.cut.h : this.data.cut.top;
         this.data.cut.left = this.data.cut.left <= 0 ? 0 : this.data.cut.left;
         this.data.cut.top = this.data.cut.top <= 0 ? 0 : this.data.cut.top;
+        
     }
+
     //获取属性
     private setProps = (options : props) => {
 
@@ -432,7 +482,9 @@ class CutImg {
         this.staData.fileRules.minW = options.files.minW;
         this.staData.fileRules.minH = options.files.minH;
         return this._this;
+        
     }
+
     setId = (tImg : string, pImg : string, cFrame : string) => {
         onMounted(() => {
             window.addEventListener('resize', this.updateMouseRules);
@@ -448,7 +500,11 @@ class CutImg {
         return this._this;
     }
     private getSelectStatus = () => {
-        return this.isSelected;
+        return {
+            isSelected : this.isSelected,
+            pixel : this.pixel,
+            prompt : this.prompting
+        };
     }
     private _this = {
         setProp : this.setProps,
