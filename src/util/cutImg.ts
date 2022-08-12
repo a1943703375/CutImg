@@ -13,7 +13,17 @@ type data = {
         left : number
     }
 }
-
+type props = {
+    originW : number,
+    preW : number,
+    whRatio : number,
+    files : {
+        minSize : number,
+        maxSize : number,
+        minW : number,
+        minH : number
+    }
+}
 class CutImg {
     private image : HTMLImageElement = new Image(); // 存放上传的图片
     private reader : FileReader = new FileReader();  //  读取图片
@@ -56,7 +66,12 @@ class CutImg {
             imgWhRatio : 0,     //图片的宽高比
             whRatio : 0,        //裁剪框的宽高比
             cutPreviewRatio : 0,      //裁剪框与预览框的大小比
-            h : 0
+            fileRules : {
+                minSize : 0,
+                maxSize : 0,
+                minW : 0,
+                minH : 0
+            }
     }
     private mouseData = {
         x : 0,
@@ -138,7 +153,6 @@ class CutImg {
                 this.mouseData.rules.minY = t.top;
                 this.mouseData.rules.maxY = t.top + this.staData.actualImg.h; 
         }
-        
     }
     //更新预览图片
     private changeElement = () => {
@@ -157,12 +171,9 @@ class CutImg {
             this.pImg.style.height = this.data.preImg.h + 'px';
             this.pImg.style.left =  this.data.preImg.left + 'px';
             this.pImg.style.top =  this.data.preImg.top + 'px';
-
         }
-
     }
 
-    
     //是否允许移动
     allowMove = (e : MouseEvent) => {
         e.preventDefault();
@@ -207,8 +218,6 @@ class CutImg {
             this.scaleLT(e.clientX, e.clientY);
         }
         this.verifyMouseArea(e);
-
-
         this.changeElement();
     }
 
@@ -370,8 +379,6 @@ class CutImg {
                 }
             }
         }
-
-        
     }
 
     //停止移动
@@ -396,10 +403,8 @@ class CutImg {
             const offsetX = e.clientX - this.mouseData.x;
             this.data.cut.top += offsetY;
             this.data.cut.left += offsetX;    
-
             this.mouseData.x = e.clientX;
             this.mouseData.y = e.clientY;
-
             this.mouseData.x = this.mouseData.x <= this.mouseData.rules.minX + this.data.cut.w / 2 ? this.mouseData.rules.minX + this.data.cut.w / 2 : this.mouseData.x;
             this.mouseData.x = this.mouseData.x >= this.mouseData.rules.maxX - this.data.cut.w / 2 ? this.mouseData.rules.maxX - this.data.cut.w / 2 : this.mouseData.x;
             this.mouseData.y = this.mouseData.y <= this.mouseData.rules.minY + this.data.cut.h / 2 ? this.mouseData.rules.minY + this.data.cut.h / 2 : this.mouseData.y;
@@ -415,16 +420,19 @@ class CutImg {
         this.data.cut.top = this.data.cut.top >= this.staData.actualImg.h - this.data.cut.h ? this.staData.actualImg.h - this.data.cut.h : this.data.cut.top;
         this.data.cut.left = this.data.cut.left <= 0 ? 0 : this.data.cut.left;
         this.data.cut.top = this.data.cut.top <= 0 ? 0 : this.data.cut.top;
-        
     }
-
     //获取属性
-    setProps = (...args : any) => {
-        [ this.staData.originAreaW, this.staData.whRatio, this.staData.preW ] = args;
-        return this._this;
-        
-    }
+    private setProps = (options : props) => {
 
+        this.staData.originAreaW = options.originW;
+        this.staData.whRatio = options.whRatio;
+        this.staData.preW = options.preW;
+        this.staData.fileRules.minSize = options.files.minSize;
+        this.staData.fileRules.maxSize = options.files.maxSize;
+        this.staData.fileRules.minW = options.files.minW;
+        this.staData.fileRules.minH = options.files.minH;
+        return this._this;
+    }
     setId = (tImg : string, pImg : string, cFrame : string) => {
         onMounted(() => {
             window.addEventListener('resize', this.updateMouseRules);
@@ -437,26 +445,15 @@ class CutImg {
             window.removeEventListener('resize', this.updateMouseRules);
             window.removeEventListener('scroll', this.updateMouseRules);
         })
-    
         return this._this;
     }
-    getSelectStatus = () => {
+    private getSelectStatus = () => {
         return this.isSelected;
     }
-
     private _this = {
         setProp : this.setProps,
         setId : this.setId,
         getSelectStatus : this.getSelectStatus
     }
 }
-
-
-
-
-
-
-
-
 export default CutImg;
-
