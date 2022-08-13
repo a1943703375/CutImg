@@ -12,7 +12,8 @@ const props = defineProps<{
                 isLight : boolean,
                 customUploadBtn : boolean,
                 imgMaxSize : number,
-                imgMinSize : number
+                imgMinSize : number,
+                curAvatarUrl? : string
             }>();
 
 
@@ -71,16 +72,16 @@ const { isSelected, pixel, prompt, h, w, cuting } = useCutImg.setId(props.tarImg
         <!-- 已选择图片 -->
         <div v-show="isSelected">
                        
-            <div class="cut-box"  :style="{width : cutBoxW + 'px', height : (cutBoxW) / whRatio + 'px'}">
+            <div class="cut-box"  :style="isAvatar ? {width : cutBoxW + 'px', height : (cutBoxW) / whRatio + 'px'} : {width : cutBoxW + 'px', height : (cutBoxW) / whRatio + 'px', overflow : 'hidden'}">
                 <!-- 上传的图片 -->
                 <div :style="{maxWidth : cutBoxW + 'px', maxHeight : cutBoxW / whRatio + 'px'}">
                     <img class="upload-img" :id="tarImg">
                     <div class="cut-mask" ></div>
                     <div :id="cutFrame" class="cut" @mousedown="useCutImg.allowMove($event)">
-                        <span ref="rb" class="cut-scale-rb" @mousedown="useCutImg.allowScale($event)"></span>
-                        <span ref="lb" class="cut-scale-lb" @mousedown="useCutImg.allowScale($event)"></span>
-                        <span ref="rt" class="cut-scale-rt" @mousedown="useCutImg.allowScale($event)"></span>
-                        <span ref="lt" class="cut-scale-lt" @mousedown="useCutImg.allowScale($event)"></span>
+                        <span :class="isAvatar ? 'cut-scale-rb' : 'cut-scale-rb-o'" @mousedown.stop="useCutImg.allowScale($event,4)"></span>
+                        <span :class="isAvatar ? 'cut-scale-lb' : 'cut-scale-lb-o'" @mousedown.stop="useCutImg.allowScale($event,3)"></span>
+                        <span :class="isAvatar ? 'cut-scale-rt' : 'cut-scale-rt-o'" @mousedown.stop="useCutImg.allowScale($event,2)"></span>
+                        <span :class="isAvatar ? 'cut-scale-lt' : 'cut-scale-lt-o'" @mousedown.stop="useCutImg.allowScale($event,1)"></span>
                     </div>
                 </div>
 
@@ -103,7 +104,7 @@ const { isSelected, pixel, prompt, h, w, cuting } = useCutImg.setId(props.tarImg
             <!-- 图片 -->
             <div class="p-avatar">
                 <div class="a-img-mask" :class="isLight ? 'a-img-mask-light' : 'a-img-mask-dark'" :style="isAvatar ? {borderRadius : '50%', width : preW + 'px', height : preW + 'px'} : {borderRadius : '5px', width : preW + 'px', height : preW / whRatio + 'px'}">
-                    <img :id="preImg" src="@/assets/222.jpg" alt=" "/>
+                    <img :id="preImg" src="@/assets/test (2).png" alt=" "/>
                 </div>
                 <p v-if="!isAvatar" :style="isLight ? {color : 'rgb(50,50,50)'} : {color : 'rgb(190,190,190)'}">预览图片</p>
                 <p v-if="isAvatar" :style="isLight ? {color : 'rgb(50,50,50)'} : {color : 'rgb(190,190,190)'}">{{ !isSelected ? '当前头像' : '预览头像' }}</p>
@@ -236,10 +237,9 @@ const { isSelected, pixel, prompt, h, w, cuting } = useCutImg.setId(props.tarImg
         margin-right: 40px;
         -webkit-user-drag: none;
         display: flex;
+        border-radius: 5px;
         justify-content: center;
         align-items: center;
-        border-radius: 6px;
-        overflow: hidden;
     }
     .cut-box > div {
         position: relative;
@@ -305,6 +305,53 @@ const { isSelected, pixel, prompt, h, w, cuting } = useCutImg.setId(props.tarImg
         transform: translate(100%,-100%);
         cursor:sw-resize;
     }
+
+    .cut-scale-rb-o {
+        position: absolute;
+        width: 15px;
+        height: 15px;
+        right: 0;
+        bottom: 0;
+        transform: translate(35%,35%);
+        border-radius: 50%;
+        cursor:nwse-resize;
+        background: white;
+    }
+    .cut-scale-lb-o {
+        position: absolute;
+        width: 15px;
+        height: 15px;
+        left: 0;
+        bottom: 0;
+        border-radius: 50%;
+        transform: translate(-35%,35%);
+        cursor:ne-resize;
+        background: white;
+    }
+    .cut-scale-lt-o {
+        position: absolute;
+        width: 15px;
+        height: 15px;
+        left: 0;
+        top: 0;
+        border-radius: 50%;
+        transform: translate(-35%,-35%);
+        cursor:se-resize;
+        background: white;
+    }
+    .cut-scale-rt-o {
+        position: absolute;
+        width: 15px;
+        height: 15px;
+        right: 0;
+        top: 0;
+        transform: translate(35%,-35%);
+        cursor:sw-resize;
+        background: white;
+        border-radius: 50%;
+    }
+
+
     .upload-img {
         position: relative;
         -webkit-user-drag: none;
