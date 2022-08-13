@@ -41,6 +41,8 @@ class CutImg {
     private pImg : HTMLImageElement = new Image();     //预览图片
     private cFrame : HTMLDivElement = document.createElement('div') as HTMLDivElement;    //裁剪框
     private isSelected = ref<boolean>(false);
+    private cuting = ref<boolean>(false);
+    //获取图片当前的分辨率
     private pixel = reactive<pixel>({
         w : 0,
         h : 0
@@ -50,6 +52,8 @@ class CutImg {
         msg : '',
         code : 0
     });
+    private w = ref<number>(0);
+    private h = ref<number>(0);
     private data : data = {
             cut : {
                 w : 0,
@@ -83,7 +87,7 @@ class CutImg {
             preW : 0,           //预览图片的宽
             imgWhRatio : 0,     //图片的宽高比
             whRatio : 0,        //裁剪框的宽高比
-            fileRules : {
+            imgRules : {
                 minSize : 0,
                 maxSize : 0,
                 minW : 0,
@@ -111,13 +115,15 @@ class CutImg {
     } 
     //已选择图片
     selected = (e: File) => {
-            
-        if (e == null) {
-            this.isSelected.value = false;
+
+
+        if (e.type.substring(0,5) !== 'image') {
+            window.alert('(╬▔皿▔)╯这个地方只能上传图片。。。');
             return undefined;
-        };
-        if (e.size < 500000 || e.size > 5000000) {
-            this.isSelected.value = false;
+        } 
+        if (e.size < this.staData.imgRules.minSize * 1000 || e.size > this.staData.imgRules.maxSize * 1000) {
+            const size = e.size < this.staData.imgRules.minSize * 1000 ? (e.size /1000).toFixed(3) + 'KB' : e.size > this.staData.imgRules.maxSize * 1000 ? (e.size / 1000000).toFixed(3) + 'MB' : (e.size / 1000).toFixed(3) + 'KB';
+            window.alert('Σ( ° △ °|||) 当前图片大小为：' + size + '，得上传大小在' + this.staData.imgRules.minSize + 'KB至' + this.staData.imgRules.maxSize / 1000 + 'MB之间的图片才行。。。');
             return undefined;
         }
         
@@ -130,6 +136,10 @@ class CutImg {
                 this.staData.originImg.w = this.image.width;
                 this.staData.originImg.h = this.image.height;
                 this.staData.imgWhRatio = this.staData.originImg.w / this.staData.originImg.h;
+                this.h.value = this.staData.imgWhRatio > 1 ? 20 : 0;
+                this.w.value = this.staData.imgWhRatio > 1 ? 0 : 20;
+                console.log(this.h.value + '      ' + this.w.value);
+                
                 //初始化
                 this.init();
             }
@@ -151,24 +161,24 @@ class CutImg {
     private init = () => {
         if (this.tImg && this.pImg && this.isSelected.value) {
             
-            if (this.staData.originImg.w > this.staData.originImg.h) {
+            if (this.staData.originImg.w / this.staData.originImg.h >= this.staData.whRatio) {
                 this.tImg.style.width = this.staData.originAreaW + 'px';
                 this.tImg.style.height = 'auto';
                 this.staData.actualImg.w = this.staData.originAreaW;
                 this.staData.actualImg.h = this.staData.actualImg.w / this.staData.imgWhRatio;
-                this.data.cut.h = this.staData.actualImg.h;
+                this.data.cut.h = this.staData.actualImg.h / 2;
                 this.data.cut.w = this.data.cut.h * this.staData.whRatio;
                 this.data.cut.left = (this.staData.actualImg.w - this.data.cut.w) / 2;
-                this.data.cut.top = 0;
+                this.data.cut.top = (this.staData.actualImg.h - this.data.cut.h) / 2;
             } else {
                 this.tImg.style.width = 'auto';
                 this.tImg.style.height = this.staData.originAreaW / this.staData.whRatio + 'px';
                 this.staData.actualImg.h = this.staData.originAreaW / this.staData.whRatio;
                 this.staData.actualImg.w = this.staData.actualImg.h * this.staData.imgWhRatio;
-                this.data.cut.w = this.staData.actualImg.w;
+                this.data.cut.w = this.staData.actualImg.w / 2;
                 this.data.cut.h = this.data.cut.w / this.staData.whRatio;
                 this.data.cut.top = (this.staData.actualImg.h - this.data.cut.h) / 2;
-                this.data.cut.left = 0;
+                this.data.cut.left = (this.staData.actualImg.w - this.data.cut.w) / 2;
             }
 
             this.data.preImg.w = this.staData.actualImg.w / this.data.cut.w * this.staData.preW;
@@ -223,6 +233,8 @@ class CutImg {
         this.moveTarget = true;
         this.mouseData.x = e.clientX;
         this.mouseData.y = e.clientY;
+        this.staData.originCut.left = this.data.cut.left;
+        this.staData.originCut.top = this.data.cut.top;
         window.addEventListener('mouseup', this.stopMove);
         if (this.moveTarget) {
             window.addEventListener('mousemove', this.cutFrameMove);
@@ -445,48 +457,110 @@ class CutImg {
     //裁剪框移动
     private cutFrameMove = (e : MouseEvent) => {
         if (this.moveTarget) {
-            const offsetY = e.clientY - this.mouseData.y;
-            const offsetX = e.clientX - this.mouseData.x;
-            this.data.cut.top += offsetY;
-            this.data.cut.left += offsetX;    
+            const maxTop = this.staData.actualImg.h - this.data.cut.h;
+            const maxLeft = this.staData.actualImg.w - this.data.cut.w;
+            const left = e.clientX - this.mouseData.x + this.staData.originCut.left;
+            const top = e.clientY - this.mouseData.y + this.staData.originCut.top;
 
-            this.mouseData.x = e.clientX;
-            this.mouseData.y = e.clientY;
+            this.data.cut.left = left < 0 ? 0 : left > maxLeft ? maxLeft : left;
+            this.data.cut.top = top < 0 ? 0 : top > maxTop ? maxTop : top;
 
-            this.mouseData.x = this.mouseData.x <= this.mouseData.rules.minX + this.data.cut.w / 2 ? this.mouseData.rules.minX + this.data.cut.w / 2 : this.mouseData.x;
-            this.mouseData.x = this.mouseData.x >= this.mouseData.rules.maxX - this.data.cut.w / 2 ? this.mouseData.rules.maxX - this.data.cut.w / 2 : this.mouseData.x;
-            this.mouseData.y = this.mouseData.y <= this.mouseData.rules.minY + this.data.cut.h / 2 ? this.mouseData.rules.minY + this.data.cut.h / 2 : this.mouseData.y;
-            this.mouseData.y = this.mouseData.y >= this.mouseData.rules.maxY - this.data.cut.h / 2 ? this.mouseData.rules.maxY - this.data.cut.h / 2 : this.mouseData.y;
-            this.verifyCutArea();
             this.changeElement();
         }
     }
 
-    //检查裁剪框位置是否超出界限
-    private verifyCutArea = () => {
-        this.data.cut.left = this.data.cut.left >= this.staData.actualImg.w - this.data.cut.w ? this.staData.actualImg.w - this.data.cut.w : this.data.cut.left;
-        this.data.cut.top = this.data.cut.top >= this.staData.actualImg.h - this.data.cut.h ? this.staData.actualImg.h - this.data.cut.h : this.data.cut.top;
-        this.data.cut.left = this.data.cut.left <= 0 ? 0 : this.data.cut.left;
-        this.data.cut.top = this.data.cut.top <= 0 ? 0 : this.data.cut.top;
+    //裁剪
+    private cut = (image : HTMLImageElement, oriActaRatio : number, w : number, h : number, left : number, top : number, cW : number, cH : number, imgWhRatio : number) => {
+        const canvas : HTMLCanvasElement = document.createElement('canvas');
+        const ctx : CanvasRenderingContext2D = canvas.getContext('2d') as CanvasRenderingContext2D;
+        const pixel = window.devicePixelRatio;
         
+        canvas.width = 480 * pixel;
+        canvas.height = canvas.width / imgWhRatio;
+
+        const imgData : Promise<ImageBitmap> = createImageBitmap(image, 0, 0, w, h);
+
+        return new Promise((resolve, reject) => {
+            imgData.then(res => {
+                console.log(w + '              ' + h);
+                console.log(left * oriActaRatio + '          ' + top * oriActaRatio);
+                console.log(cW * oriActaRatio + '            ' + cH * oriActaRatio,);
+
+                ctx.imageSmoothingQuality = 'high'
+                ctx.drawImage(res, left * oriActaRatio, top * oriActaRatio,
+                                    cW * oriActaRatio,
+                                    cH * oriActaRatio,
+                                    0, 0, canvas.width, canvas.height);
+                
+
+
+                const base64 = canvas.toDataURL();
+                canvas.toBlob((blob) => {
+                    const link : HTMLAnchorElement  = document.createElement('a');
+
+                    if (blob == null) {
+                        resolve(base64);
+                        return undefined;
+                    }
+                    const href =  URL.createObjectURL(blob);
+                    link.download = 'test';
+                    link.href = href;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(href);
+                    resolve(base64);
+                })
+                
+            }).catch(err => {
+                reject(err.data);
+            })
+        })
+
+
     }
 
+
+    ok = async (pixelW : number, pixelH : number, isAvatar : boolean) => {
+        this.cuting.value = true;
+        if (!isAvatar && (pixelW < 960 || pixelH < 600)) {
+            window.alert('(。>︿<)_θ 图片的分辨率不够。。。')
+            this.cuting.value = false;
+            return undefined;
+        }
+        
+        const result = await this.cut(this.image, 
+                                    this.staData.originImg.w / this.staData.actualImg.w, 
+                                    this.staData.originImg.w, 
+                                    this.staData.originImg.h,
+                                    this.data.cut.left,
+                                    this.data.cut.top,
+                                    this.data.cut.w,
+                                    this.data.cut.h,
+                                    this.staData.whRatio);
+        console.log(result);
+        this.cuting.value = false;
+        
+        
+        
+    }
     //获取属性
     private setProps = (options : props) => {
 
         this.staData.originAreaW = options.originW;
         this.staData.whRatio = options.whRatio;
         this.staData.preW = options.preW;
-        this.staData.fileRules.minSize = options.files.minSize;
-        this.staData.fileRules.maxSize = options.files.maxSize;
-        this.staData.fileRules.minW = options.files.minW;
-        this.staData.fileRules.minH = options.files.minH;
+        this.staData.imgRules.minSize = options.files.minSize;
+        this.staData.imgRules.maxSize = options.files.maxSize;
+        this.staData.imgRules.minW = options.files.minW;
+        this.staData.imgRules.minH = options.files.minH;
+        
         return this._this;
         
     }
-
     setId = (tImg : string, pImg : string, cFrame : string) => {
         onMounted(() => {
+            console.log('onMounted');
             window.addEventListener('resize', this.updateMouseRules);
             window.addEventListener('scroll', this.updateMouseRules);
             this.tImg = document.getElementById(tImg) as HTMLImageElement;
@@ -494,22 +568,33 @@ class CutImg {
             this.cFrame = document.getElementById(cFrame) as HTMLDivElement;
         })
         onUnmounted(() => {
+            console.log('onUnmounted');
+            
             window.removeEventListener('resize', this.updateMouseRules);
             window.removeEventListener('scroll', this.updateMouseRules);
         })
+    
         return this._this;
     }
     private getSelectStatus = () => {
         return {
             isSelected : this.isSelected,
             pixel : this.pixel,
-            prompt : this.prompting
+            prompt : this.prompting,
+            h : this.h,
+            w : this.w,
+            cuting : this.cuting
         };
     }
+
     private _this = {
         setProp : this.setProps,
         setId : this.setId,
         getSelectStatus : this.getSelectStatus
     }
 }
+
+
+
 export default CutImg;
+
