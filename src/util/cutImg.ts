@@ -231,7 +231,7 @@ class CutImg {
     allowMove = (e : MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        
+        this.updateMouseRules(e);
         this.moveTarget = true;
         this.mouseData.x = e.clientX;
         this.mouseData.y = e.clientY;
@@ -249,6 +249,7 @@ class CutImg {
         e.preventDefault();
         e.stopPropagation();
         this.scaleTarget = true;
+        this.updateMouseRules(e);
         this.staData.originCut.h = this.data.cut.h;
         this.staData.originCut.w = this.data.cut.w;
         this.staData.originCut.left = this.data.cut.left;
@@ -562,16 +563,9 @@ class CutImg {
     }
     setId = (tImg : string, pImg : string, cFrame : string) => {
         onMounted(() => {
-            window.addEventListener('resize', this.updateMouseRules);
-            window.addEventListener('scroll', this.updateMouseRules);
             this.tImg = document.getElementById(tImg) as HTMLImageElement;
             this.pImg = document.getElementById(pImg) as HTMLImageElement;
             this.cFrame = document.getElementById(cFrame) as HTMLDivElement;
-        })
-        onUnmounted(() => {
-            
-            window.removeEventListener('resize', this.updateMouseRules);
-            window.removeEventListener('scroll', this.updateMouseRules);
         })
     
         return this._this;
