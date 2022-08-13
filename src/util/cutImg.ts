@@ -130,7 +130,6 @@ class CutImg {
         this.reader.readAsDataURL(e);
         this.reader.onloadend = () => {
             this.image.src = String(this.reader.result);
-            this.isSelected.value = true;
             this.image.onload = () => {
                 //保存图片的原始大小 
                 this.staData.originImg.w = this.image.width;
@@ -138,7 +137,6 @@ class CutImg {
                 this.staData.imgWhRatio = this.staData.originImg.w / this.staData.originImg.h;
                 this.h.value = this.staData.imgWhRatio > 1 ? 20 : 0;
                 this.w.value = this.staData.imgWhRatio > 1 ? 0 : 20;
-                console.log(this.h.value + '      ' + this.w.value);
                 
                 //初始化
                 this.init();
@@ -159,7 +157,7 @@ class CutImg {
     }
     //初始化裁剪框和预览框
     private init = () => {
-        if (this.tImg && this.pImg && this.isSelected.value) {
+        if (this.tImg && this.pImg) {
             
             if (this.staData.originImg.w / this.staData.originImg.h >= this.staData.whRatio) {
                 this.tImg.style.width = this.staData.originAreaW + 'px';
@@ -188,6 +186,9 @@ class CutImg {
             this.pImg.src = this.image.src;
             this.updateMouseRules(null);
             this.changeElement();
+            this.isSelected.value = true;
+            console.log(this.isSelected.value);
+            
         }
     }
     //更新可移动的界限
@@ -230,6 +231,7 @@ class CutImg {
     allowMove = (e : MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
+        
         this.moveTarget = true;
         this.mouseData.x = e.clientX;
         this.mouseData.y = e.clientY;
@@ -243,7 +245,7 @@ class CutImg {
     }
 
      //是否允许缩放
-    allowScale = (e : MouseEvent) => {
+    allowScale = (e : MouseEvent, x : number) => {
         e.preventDefault();
         e.stopPropagation();
         this.scaleTarget = true;
@@ -251,6 +253,7 @@ class CutImg {
         this.staData.originCut.w = this.data.cut.w;
         this.staData.originCut.left = this.data.cut.left;
         this.staData.originCut.top = this.data.cut.top;
+        this.mouseData.curTarget = x;
         this.verifyMouseArea(e);
         window.addEventListener('mouseup', this.stopMove);
         if (this.scaleTarget) {
@@ -482,9 +485,6 @@ class CutImg {
 
         return new Promise((resolve, reject) => {
             imgData.then(res => {
-                console.log(w + '              ' + h);
-                console.log(left * oriActaRatio + '          ' + top * oriActaRatio);
-                console.log(cW * oriActaRatio + '            ' + cH * oriActaRatio,);
 
                 ctx.imageSmoothingQuality = 'high'
                 ctx.drawImage(res, left * oriActaRatio, top * oriActaRatio,
@@ -538,7 +538,9 @@ class CutImg {
                                     this.data.cut.w,
                                     this.data.cut.h,
                                     this.staData.whRatio);
+
         console.log(result);
+        
         this.cuting.value = false;
         
         
@@ -560,7 +562,6 @@ class CutImg {
     }
     setId = (tImg : string, pImg : string, cFrame : string) => {
         onMounted(() => {
-            console.log('onMounted');
             window.addEventListener('resize', this.updateMouseRules);
             window.addEventListener('scroll', this.updateMouseRules);
             this.tImg = document.getElementById(tImg) as HTMLImageElement;
@@ -568,7 +569,6 @@ class CutImg {
             this.cFrame = document.getElementById(cFrame) as HTMLDivElement;
         })
         onUnmounted(() => {
-            console.log('onUnmounted');
             
             window.removeEventListener('resize', this.updateMouseRules);
             window.removeEventListener('scroll', this.updateMouseRules);
@@ -597,4 +597,3 @@ class CutImg {
 
 
 export default CutImg;
-
