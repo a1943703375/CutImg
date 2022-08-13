@@ -10,41 +10,40 @@ const props = defineProps<{
                 preImg : string,
                 cutFrame : string,
                 isLight : boolean,
-                customUploadBtn : boolean
-            }>()
+                customUploadBtn : boolean,
+                imgMaxSize : number,
+                imgMinSize : number
+            }>();
 
 
 const file : HTMLInputElement = document.createElement('input') as HTMLInputElement;
 file.setAttribute('type','file');
 file.setAttribute('accept','image/png,image/jpg,image/jpeg');
 
-const h = props.whRatio > 1 ? 40 : 20
-
 const reset = () => {
     
     file.click();
     file.onchange = () => {
-        if (file.files) {
+        if (file.files && file.files[0]) {
             useCutImg.selected(file.files[0]); 
-            
+        } else {
+            window.alert('(= . = )ブ 还没有上传图片啊。。。');
         }
-        
     }
 }
 
 const useCutImg : CutImg = new CutImg();
-const { isSelected, pixel, prompt } = useCutImg.setId(props.tarImg, props.preImg, props.cutFrame)
+const { isSelected, pixel, prompt, h, w, cuting } = useCutImg.setId(props.tarImg, props.preImg, props.cutFrame)
                             .setProp({
                                 originW: props.cutBoxW,
                                 preW: props.preW,
                                 whRatio: props.whRatio,
                                 files: {
-                                    minSize: 400,
-                                    maxSize: 5000,
+                                    minSize: props.imgMinSize,
+                                    maxSize: props.imgMaxSize,
                                     minW: 960,
                                     minH: 600,
-                                },
-                                
+                                }
                             }).getSelectStatus();
 
 
@@ -72,7 +71,7 @@ const { isSelected, pixel, prompt } = useCutImg.setId(props.tarImg, props.preImg
         <!-- 已选择图片 -->
         <div v-show="isSelected">
                        
-            <div class="cut-box"  :style="{width : cutBoxW + 'px', height : (cutBoxW) / whRatio  + h + 'px'}">
+            <div class="cut-box"  :style="{width : cutBoxW + 'px', height : (cutBoxW) / whRatio + 'px'}">
                 <!-- 上传的图片 -->
                 <div :style="{maxWidth : cutBoxW + 'px', maxHeight : cutBoxW / whRatio + 'px'}">
                     <img class="upload-img" :id="tarImg">
@@ -96,7 +95,7 @@ const { isSelected, pixel, prompt } = useCutImg.setId(props.tarImg, props.preImg
             
                 </div>
                 <!-- 显示图片预期大小 -->
-                <span v-if="!isAvatar" class="px" :style="isLight ? {color : 'rgb(50,50,50)'} : {color : 'rgb(190,190,190)'}">当前的分辨率为：<span :style="pixel.w > 960 ? { color : '#10B981' } : { color : '#B91C1C' }">{{ pixel.w }}*{{ pixel.h }}</span>，分辨率不能低于960*600</span>
+                <span v-if="!isAvatar" class="px" :style="isLight ? {color : 'rgb(50,50,50)'} : {color : 'rgb(190,190,190)'}">当前分辨率：<span :style="pixel.w > 960 ? { color : '#10B98195' } : { color : '#EF444495' }">{{ pixel.w }}*{{ pixel.h }}</span>, 最终分辨率需要大于960*600</span>
             </div>
         </div>
         <!-- 预览 -->
@@ -109,7 +108,7 @@ const { isSelected, pixel, prompt } = useCutImg.setId(props.tarImg, props.preImg
                 <p v-if="!isAvatar" :style="isLight ? {color : 'rgb(50,50,50)'} : {color : 'rgb(190,190,190)'}">预览图片</p>
                 <p v-if="isAvatar" :style="isLight ? {color : 'rgb(50,50,50)'} : {color : 'rgb(190,190,190)'}">{{ !isSelected ? '当前头像' : '预览头像' }}</p>
                 <div v-if="isSelected" class="submit" :style="isLight ? {background : 'rgb(56, 155, 243)'} : {background : 'rgb(47, 110, 165)'}">
-                    <span :style="isLight ? {color : 'white'} : {color : 'rgb(200,200,200)'}">确定</span>
+                    <span :style="isLight ? {color : 'white'} : {color : 'rgb(200,200,200)'}" @click="useCutImg.ok(pixel.w, pixel.h, isAvatar)">{{ cuting ? '正在裁剪' : '确定裁剪' }}</span>
                 </div>
             </div>
         </div>
@@ -239,7 +238,8 @@ const { isSelected, pixel, prompt } = useCutImg.setId(props.tarImg, props.preImg
         display: flex;
         justify-content: center;
         align-items: center;
-        border-radius: 3px;
+        border-radius: 6px;
+        overflow: hidden;
     }
     .cut-box > div {
         position: relative;
@@ -319,7 +319,6 @@ const { isSelected, pixel, prompt } = useCutImg.setId(props.tarImg, props.preImg
         height: max-content;
         display: inline-block;
         align-items: center;
-        margin-top: 5px;
         cursor: pointer;
     }
     .icon {
@@ -366,8 +365,8 @@ const { isSelected, pixel, prompt } = useCutImg.setId(props.tarImg, props.preImg
         width: max-content;
         height: min-content;
         right: 0;
-        transform: translateY(25%);
-        font-size: 0.875rem;
+        transform: translateY(10%);
+        font-size: 0.8rem;
     }
 
     .tips {
